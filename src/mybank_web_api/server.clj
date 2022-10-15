@@ -20,7 +20,7 @@
     (http/stop @server)
     (pprint "Server stopped.")
     (catch Throwable e
-      (error/print-error e 500 (Throwable->map e)))))
+      (error/fire-in-the-hole e))))
 
 (defn start []
   (try
@@ -28,7 +28,7 @@
     (reset! server (http/start (create-server)))
     (pprint "Server on.")
     (catch Throwable e
-      (error/print-error e 500 (Throwable->map e))
+      (error/fire-in-the-hole e)
       (stop-server))))
 
 (defn reset-server []
