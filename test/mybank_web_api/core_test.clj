@@ -48,6 +48,12 @@
                   1 2 3
                   6 6 12))
 
+
+(def server ())
+(test-post server :post "/deposito/1" "199.93")
+
+
+
   (macroexpand '(are [a b c] (= (* a b) c)
                   1 2 2
                   6 6 36))

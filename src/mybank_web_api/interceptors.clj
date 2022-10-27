@@ -1,7 +1,6 @@
 (ns mybank-web-api.interceptors
   (:use [clojure pprint])
-  (:require [mybank-web-api.db :as db]
-            [io.pedestal.interceptor :as i]
+  (:require [io.pedestal.interceptor :as i]
             [clojure.data.json :as json]
             [mybank-web-api.logic :as logic]
             [mybank-web-api.response :as response]))
@@ -41,13 +40,14 @@
 ;; business interceptors
 (defn carrega-contas
   "Função de roteamento que carrega as contas ao contexto."
-  [context]
+  [context database]
   (pprint "Carregando contas ao contexto!!")
-  (assoc context :contas db/contas))
+  (assoc context :contas (:contas database)))
 
-(def carrega-contas-interceptor
+(defn carrega-contas-interceptor
+  [database]
   (i/interceptor {:name  :contas-interceptor
-                  :enter carrega-contas}))
+                  :enter (fn [context] (carrega-contas context database))}))
 
 (defn lista-contas
   "Recupera contas (`:contas`) e associa a um :response"
@@ -132,17 +132,3 @@
                       (update-in context [:response]
                        coerce-to (accepted-type context))))}))
 
-(comment
-  (macroexpand-1 `(as-> (:contas context) contas
-                    {:status (if (nil? contas) 500 200)
-                     :headers {"Content-Type" "text/plain"}
-                     :body contas}))
-  (get-saldo {:contas @db/contas :path-params {:id "1"}})
-
-  ;; 3.
-  (require '[io.pedestal.interceptor.chain :as chain])
-  (chain/execute {:request {:accept {:field "application/json"}}}
-                 [coerce-body
-                  print-n-continue-int
-                  carrega-contas-interceptor
-                  lista-contas-interceptor]))

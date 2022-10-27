@@ -1,6 +1,6 @@
   (ns mybank-web-api.logic
     (:use [clojure pprint])
-    (:require [mybank-web-api.db :as db]
+    (:require [mybank-web-api.database :as db]
               [mybank-web-api.error :as error]
               [mybank-web-api.response :as response])
     (:gen-class))
@@ -42,7 +42,7 @@
   (try
     (let [_ (account-exists? contas id-conta)
           _ (amount>=0? valor-deposito)
-          _ (swap! db/contas (fn [m] (update-in m [id-conta :saldo] #(+ % valor-deposito))))]
+          _ (swap! contas (fn [m] (update-in m [id-conta :saldo] #(+ % valor-deposito))))]
       
       (success-response contas id-conta))
     
@@ -57,8 +57,8 @@
   (try
     (let [_ (account-exists? contas id-conta)
           _ (amount>=0? valor-withdraw)
-          _ (amount>withdraw? (id-conta @db/contas) valor-withdraw)
-          _ (swap! db/contas (fn [m] (update-in m [id-conta :saldo] #(- % valor-withdraw))))]
+          _ (amount>withdraw? (id-conta @contas) valor-withdraw)
+          _ (swap! contas (fn [m] (update-in m [id-conta :saldo] #(- % valor-withdraw))))]
       
       (success-response contas id-conta))
     

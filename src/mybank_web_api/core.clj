@@ -1,16 +1,10 @@
  (ns mybank-web-api.core
    (:use [clojure pprint])
-   (:require [io.pedestal.http :as http]
-             [io.pedestal.test :as test-http]
-             [mybank-web-api.server :as server])
-   (:gen-class)) 
+   (:require [mybank-web-api.server :as server]
 
-(defn test-request
-  [server verb url]
-  (test-http/response-for (::http/service-fn @server) verb url))
-(defn test-post
-  [server verb url body]
-  (test-http/response-for (::http/service-fn @server) verb url :body body))
+             [mybank-web-api.database :as db]
+             [com.stuartsierra.component :as component])
+   (:gen-class)) 
  
 (comment
  """
@@ -23,7 +17,7 @@
       é onde se encontra a variável/símbolo que representa do servidor,
       e onde estão os métodos pra iniciar, parar e resetá-lo
 
-   𓂅⊹⋆ db.clj
+   𓂅⊹⋆ database.clj
       como esse exercício não tem conexão com banco de dados, nesse arquivo
       se encontram as estrutuas de dados pra testar a API   
    
@@ -37,41 +31,54 @@
    𓂅⊹⋆ logic.clj
       aqui é onde se encontram os métodos com as regras de negócio implementadas  
 """) 
+
+(def new-sys
+  (component/system-map
+   :database (db/new-database)
+   :web-server (component/using
+                (server/new-servidor)
+                [:database])))
+
+(def sys (atom nil))
+(defn start-server [] (reset! sys (component/start new-sys)))
+(defn stop-server [] (component/stop new-sys))
   
 (comment
-  (server/start) 
-  (server/stop-server) 
-  (server/reset-server) 
-  
-  (test-request server/server :get "/hello")
-  (test-request server/server :get "/hellov2")
-  (test-request server/server :get "/hello/eric")
-  (test-request server/server :get "/echo")
-  (test-request server/server :post "/body-params")
-  (test-request server/server :get "/contas")
-  (test-request server/server :get "/pega-tudo/por/exemplo")
-  (test-request server/server :get "/pega-tudo/por/exemplo?foo=bar&foo=foobar")
-  (test-request server/server :get "/constraints/1")
-  (test-request server/server :get "/constraints/bla")
+  (require '[clj-http.client :as client])
+  (client/post "http://localhost:8890/deposito/1" {:body "199.93"})
+  (start-server)
+  (:web-server @sys)
 
-  (test-request server/server :get "/saldo/1")
-  (test-request server/server :get "/saldo/2")
-  (test-request server/server :get "/saldo/3")
-  (test-request server/server :get "/saldo/4")
-  (test-request server/server :get "/saldo/5")
+  (server/test-request :get "/hello")
+  (server/test-request :get "/hellov2")
+  (server/test-request :get "/hello/eric")
+  (server/test-request :get "/echo")
+  (server/test-request :post "/body-params")
+  (server/test-request :get "/contas")
+  (server/test-request :get "/pega-tudo/por/exemplo")
+  (server/test-request :get "/pega-tudo/por/exemplo?foo=bar&foo=foobar")
+  (server/test-request :get "/constraints/1")
+  (server/test-request :get "/constraints/bla")
 
-  (test-post server/server :post "/deposito/1" "6")
-  (test-post server/server :post "/deposito/1" "100")
-  (test-post server/server :post "/deposito/2" "2")
-  (test-post server/server :post "/deposito/3" "300")
-  (test-post server/server :post "/deposito/4" "100")
+  (server/test-request :get "/saldo/1")
+  (server/test-request :get "/saldo/2")
+  (server/test-request :get "/saldo/3")
+  (server/test-request :get "/saldo/4")
+  (server/test-request :get "/saldo/5")
 
-  (test-post server/server :post "/deposito/1" "-10")
-    
-  (test-post server/server :post "/saque/1" "-10")
-  (test-post server/server :post "/saque/1" "10")
-  (test-post server/server :post "/saque/3" "1")
-  (test-post server/server :post "/saque/4" "100")
-  (test-post server/server :post "/saque/1" "0")
-  )
-   
+  (server/test-post :post "/deposito/1" "6")
+  (server/test-post :post "/deposito/1" "100")
+  (server/test-post :post "/deposito/2" "2")
+  (server/test-post :post "/deposito/3" "300")
+  (server/test-post :post "/deposito/4" "100")
+
+  (server/test-post :post "/deposito/1" "-10")
+
+  (server/test-post :post "/saque/1" "-10")
+  (server/test-post :post "/saque/1" "10")
+  (server/test-post :post "/saque/3" "1")
+  (server/test-post :post "/saque/4" "100")
+  (server/test-post :post "/saque/1" "0")
+
+  (stop-server)
+  ) 
